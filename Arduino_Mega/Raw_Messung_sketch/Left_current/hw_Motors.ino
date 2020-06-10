@@ -1,18 +1,6 @@
 #include <PWM.h>
 
-#define M_LEFT_FORWARD 3
-#define M_LEFT_BACKWARD 2
-#define M_LEFT_FWD_EN 5
-#define M_LEFT_BWD_EN 4
-
-#define M_LEFT_POS A0
-
-#define M_RIGHT_FORWARD 7
-#define M_RIGHT_BACKWARD 8
-#define M_RIGHT_FWD_EN 9
-#define M_RIGHT_BWD_EN 6
-
-
+bool motors_attached = false;
 
 class Motor {
   public:
@@ -21,17 +9,22 @@ class Motor {
     int pin_fwd;
     int pin_bwd;
 
-    Motor(int fwd_en, int bwd_en, int fwd, int bwd) {
+    void attach(int fwd_en, int bwd_en, int fwd, int bwd) {
       InitTimersSafe();
       pin_fwd_en = fwd_en;
       pin_bwd_en = bwd_en;
       pin_fwd = fwd;
       pin_bwd = bwd;
+
+      set_power(0);
     }
 
 
 
     void setPinPWM(int pin, int value) {
+      if (not motors_attached) {
+        Serial.println("ERROR: Motors are not attached, cannot control pwm!");
+      }
       // pin: Physical Arduino Pin Number
       // value: 0...100
       pinMode(pin, OUTPUT);
@@ -90,36 +83,35 @@ class Motor {
       setPinPWM(pin_bwd, value);
     }
 
+    void freewheel() {
+      pinMode(pin_fwd, OUTPUT);
+      pinMode(pin_bwd, OUTPUT);
+      pinMode(pin_fwd_en, OUTPUT);
+      pinMode(pin_bwd_en, OUTPUT);
+
+      digitalWrite(pin_fwd_en, LOW);
+      digitalWrite(pin_bwd_en, LOW);
+    }
+
 };
 
+Motor MotorLeft;
+Motor MotorRight;
 
-void setup() {
-  Serial.begin(250000);
-  Motor MotorLeft = Motor(M_LEFT_FWD_EN, M_LEFT_BWD_EN, M_LEFT_FORWARD, M_LEFT_BACKWARD);
-  Motor MotorRight = Motor(M_RIGHT_FWD_EN, M_RIGHT_BWD_EN, M_RIGHT_FORWARD, M_RIGHT_BACKWARD);
-
-  delay(5000);
-  MotorLeft.set_power(20);
-  delay(2000);
-  MotorLeft.set_brake(100);
-  delay(100);
-  MotorLeft.set_brake(0);
-
-
+void attach_motors() {
+  MotorLeft.attach(M_LEFT_FWD_EN, M_LEFT_BWD_EN, M_LEFT_FORWARD, M_LEFT_BACKWARD);
+  MotorRight.attach(M_RIGHT_FWD_EN, M_RIGHT_BWD_EN, M_RIGHT_FORWARD, M_RIGHT_BACKWARD);
+  MotorLeft.set_power(0);
+  MotorRight.set_power(0);
+  motors_attached = true;
 }
 
-void loop() {
-  // Wait for zero position
-  while (analogRead(M_LEFT_POS) != 0) {}
-  while (analogRead(M_LEFT_POS) == 0) {}
-  Serial.println(0);
-  int pos = analogRead(M_LEFT_POS);
-  while (pos != 1023) {
-    Serial.println(pos);
-    delayMicroseconds(2000);
-    pos = analogRead(M_LEFT_POS);
-  }
-  delay(100000L);
 
-
+void left_motor_set_power(int power){
+  MotorLeft.set_power(power);
 }
+
+void right_motor_set_power(int power){
+  MotorRight.set_power(power);
+}
+

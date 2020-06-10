@@ -51,6 +51,10 @@ void setRtcTime(Time t){
   rtc.time(t);  
 }
 
+Time getRtcTime(){
+  return rtc.time();
+}
+
 void printRtcTime() {
   // Get the current time and date from the chip.
   Time t = rtc.time();
@@ -70,13 +74,3 @@ void printRtcTime() {
 }
 
 }  // namespace
-
-void setup() {
-  Serial.begin(9600);
-}
-
-// Loop and print the time every second.
-void loop() {
-  printRtcTime();
-  delay(1020);
-}

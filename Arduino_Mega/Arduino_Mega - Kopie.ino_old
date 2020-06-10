@@ -1,0 +1,170 @@
+#include <TimerOne.h>
+#include "Streaming.h"
+#include "sw_pid_controller.cpp"
+
+#define INTERRUPT_FREQ 1000
+
+bool interrupt_flag_1khz = false;
+unsigned int interrupt_counter_1khz = 0;
+unsigned long interrupt_1khz_last_triggered = 0;
+bool interrupt_flag_100hz = false;
+unsigned int interrupt_counter_100hz = 0;
+unsigned long interrupt_100hz_last_triggered = 0;
+bool interrupt_flag_10hz = false;
+unsigned long interrupt_10hz_last_triggered = 0;
+
+float out = 0;
+
+float interrupt_1khz_avg_time = 0;
+
+float mot_left_power = 0;
+float mot_right_power = 0;
+
+
+PidController CurrentControllerLeft;
+float mot_left_current_actual = 0;
+
+PidController SpeedControllerLeft;
+float mot_left_speed_actual = 0;
+
+
+PidController CurrentControllerRight;
+float mot_right_current_actual = 0;
+
+PidController SpeedControllerRight;
+float mot_right_speed_actual = 0;
+
+void setup() {
+  Serial.begin(1000000);
+  attach_nunchuk();
+  attach_motors();
+  attach_encoders();
+  //attach_IMU();
+
+  Timer1.initialize(1000000L / INTERRUPT_FREQ);
+  Timer1.attachInterrupt( timerIsr );
+
+  left_motor_set_power(0);
+  right_motor_set_power(0);
+
+
+  CurrentControllerLeft.setpoint = 0;
+  CurrentControllerLeft.Kp = 3;
+  CurrentControllerLeft.Ki = 0.2;
+  CurrentControllerLeft.I_limit = 100;
+
+  SpeedControllerLeft.setpoint = 0;
+  SpeedControllerLeft.Kp = 0.15;
+  SpeedControllerLeft.Ki = 0.0001;
+
+  CurrentControllerRight.setpoint = 0;
+  CurrentControllerRight.Kp = 3;
+  CurrentControllerRight.Ki = 0.2;
+  CurrentControllerRight.I_limit = 100;
+
+  SpeedControllerRight.setpoint = 0;
+  SpeedControllerRight.Kp = 0.15;
+  SpeedControllerRight.Ki = 0.0001;
+
+}
+
+void timerIsr()
+{
+  interrupt_flag_1khz = true;
+  interrupt_counter_1khz += 1;
+
+  if (interrupt_counter_1khz > 9) {
+    interrupt_flag_100hz = true;
+    interrupt_counter_100hz += 1;
+    interrupt_counter_1khz = 0;
+  }
+
+  if (interrupt_counter_100hz > 9) {
+    interrupt_flag_10hz = true;
+    interrupt_counter_100hz = 0;
+  }
+}
+
+void loop() {
+  if (interrupt_flag_1khz) {
+
+
+    interrupt_1khz_last_triggered = micros();
+
+
+    mot_left_current_actual = (float(analogRead(A2)) - 509.5) * -0.0488; // ACS 712 mit 20A range
+    //mot_left_power = CurrentControllerLeft.evaluate(mot_left_current_actual);
+    //left_motor_set_power(constrain(int(mot_left_power), -10, 10));
+
+
+    //Serial << "Left:  Current Setpoint:\t" << CurrentControllerLeft.setpoint << "\tLeft  Actual Current:\t" << mot_left_current_actual << "\tmot_left_power: \t" << mot_left_power << "\n";
+    //Serial << "Current Setpoint:\t" << CurrentControllerLeft.setpoint << "\tActual Current:\t" << mot_left_current_actual << "\n";
+
+
+    mot_right_current_actual = (float(analogRead(A3)) - 513.5) * -0.0526;; // ACS 712 mit 5A range und Bypass
+    //mot_right_power = CurrentControllerRight.evaluate(mot_right_current_actual);
+    //right_motor_set_power(constrain(int(mot_right_power), -30, 30));
+
+    //Serial << "Right: Current Setpoint:\t" << CurrentControllerRight.setpoint << "\tRight Actual Current:\t" << mot_right_current_actual << "\tmot_right_power:\t" << mot_right_power << "\n";
+    //Serial << "Right: Current Setpoint:\t" << CurrentControllerRight.setpoint << "\tActual Current:\t" << mot_right_current_actual << "\n";
+
+
+
+    //Serial << "\tLeft: Actual Current:\t" << mot_left_current_actual << "\tRight: Actual Current:\t" << mot_right_current_actual << "\n";
+    //Serial << "\tLeft: Actual Current:\t" << mot_left_current_actual << "\n";
+
+
+    update_encoders();
+
+
+    interrupt_flag_1khz = false;
+  }
+  if (interrupt_flag_100hz) {
+
+
+    interrupt_100hz_last_triggered = micros();
+
+
+    update_IMU();
+
+    mot_left_speed_actual = get_left_wheel_speed();
+    mot_left_power = SpeedControllerLeft.evaluate(mot_left_speed_actual);
+    left_motor_set_power(constrain(int(mot_left_power), -10, 10));
+
+    mot_right_speed_actual = get_right_wheel_speed();
+    mot_right_power = SpeedControllerRight.evaluate(mot_right_speed_actual);
+    right_motor_set_power(constrain(int(mot_right_power), -10, 10));
+
+    // Serial << "Speed Setpoint:\t" << SpeedControllerLeft.setpoint << "\tActual Speed:\t" << mot_left_speed_actual << "\tmot_left_power: \t" << mot_left_power << "Speed Setpoint:\t" << SpeedControllerRight.setpoint << "\tActual Speed:\t" << mot_right_speed_actual << "\tmot_right_power: \t" << mot_right_power << "\n";
+
+    Serial << "Speed Setpoint:\t" << SpeedControllerLeft.setpoint << "\tActual Speed:\t" << mot_left_speed_actual << "\tmot_left_power: \t" << mot_left_power << "\n";
+    //CurrentControllerLeft.setpoint = SpeedControllerLeft.evaluate(get_left_wheel_speed());
+    //CurrentControllerRight.setpoint = SpeedControllerRight.evaluate(get_right_wheel_speed());
+
+    //Serial << "Speed Setpoint:\t" << SpeedControllerLeft.setpoint << "\tActual Speed:\t" << get_left_wheel_speed() << "\tCurrentControllerLeft Setpoint:\t" << CurrentControllerLeft.setpoint << "\n";
+
+
+
+    interrupt_flag_100hz = false;
+  }
+  if (interrupt_flag_10hz) {
+
+    interrupt_10hz_last_triggered = micros();
+
+
+
+
+    interrupt_flag_10hz = false;
+  }
+
+
+  //Serial << "\tLeft Actual Current:\t" << mot_left_current_actual << "\tmot_left_power:\t" << out << "\n";
+
+  out = get_nunchuk_y() - 134;
+
+  SpeedControllerLeft.setpoint = out;
+  SpeedControllerRight.setpoint = out;
+
+
+
+}

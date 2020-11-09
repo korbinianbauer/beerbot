@@ -8,6 +8,9 @@ class Motor {
     float brushes_voltage_drop = 0.8;
     float motor_gear_ratio = 1 / 9.778;
     float kv = 155; // rpm/V
+
+    float max_current = 5;
+    float last_current_limit_volt = 25;
     
     int pin_fwd_en;
     int pin_bwd_en;
@@ -21,7 +24,7 @@ class Motor {
 
     float supply_voltage = 22.3;
 
-    int max_power = 300;
+    int max_power = 1000;
 
 
     void attach(int fwd_en, int bwd_en, int fwd, int bwd, int forward_deadzone_low, int forward_deadzone_high, int backward_deadzone_low, int backward_deadzone_high) {
@@ -157,6 +160,14 @@ void attach_motors() {
 
 }
 
+float left_motor_get_current(){
+  return (float(analogRead(A2)) - 509.5) * -0.0488; // ACS 712 mit 20A range
+}
+
+float right_motor_get_current(){
+  return (float(analogRead(A3)) - 513.5) * -0.0526; // ACS 712 mit 5A range und Bypass
+}
+
 
 void left_motor_set_power(int power) {
   MotorLeft.set_power(power);
@@ -165,9 +176,20 @@ void left_motor_set_power(int power) {
 void left_motor_set_voltage(float voltage) {
   // Sets the armature voltage by compensating for voltage drop at armature resistance
   // Has to be called repeatedly to keep compensation updated
-  float mot_left_current_actual = (float(analogRead(A2)) - 509.5) * -0.0488; // ACS 712 mit 20A range
+  if (voltage == 0){
+    MotorLeft.set_voltage(0);
+    return;
+  }
+  float mot_left_current_actual = left_motor_get_current();
+  if (abs(mot_left_current_actual) > MotorLeft.max_current){
+    MotorLeft.last_current_limit_volt = 0.9*MotorLeft.last_current_limit_volt;
+  }else{
+    MotorLeft.last_current_limit_volt = constrain(1.1*MotorLeft.last_current_limit_volt, -25, 25);
+  }
   float left_motor_armature_resistance_voltage_drop = mot_left_current_actual * MotorLeft.armature_resistance;
-  MotorLeft.set_voltage(voltage + left_motor_armature_resistance_voltage_drop);
+  float volt_out = voltage + left_motor_armature_resistance_voltage_drop;
+  volt_out = constrain(volt_out, -MotorLeft.last_current_limit_volt, MotorLeft.last_current_limit_volt);
+  MotorLeft.set_voltage(volt_out);
 }
 
 void left_motor_set_rpm(float rpm) {
@@ -188,9 +210,20 @@ void right_motor_set_power(int power) {
 void right_motor_set_voltage(float voltage) {
   // Sets the armature voltage by compensating for voltage drop at armature resistance
   // Has to be called repeatedly to keep compensation updated
-  float mot_right_current_actual = (float(analogRead(A3)) - 513.5) * -0.0526;; // ACS 712 mit 5A range und Bypass
+  if (voltage == 0){
+    MotorRight.set_voltage(0);
+    return;
+  }
+  float mot_right_current_actual = right_motor_get_current();
+  if (abs(mot_right_current_actual) > MotorRight.max_current){
+    MotorRight.last_current_limit_volt = 0.9*MotorRight.last_current_limit_volt;
+  }else{
+    MotorRight.last_current_limit_volt = constrain(1.1*MotorRight.last_current_limit_volt, -25, 25);
+  }
   float right_motor_armature_resistance_voltage_drop = mot_right_current_actual * MotorRight.armature_resistance;
-  MotorRight.set_voltage(voltage + right_motor_armature_resistance_voltage_drop);
+  float volt_out = voltage + right_motor_armature_resistance_voltage_drop;
+  volt_out = constrain(volt_out, -MotorRight.last_current_limit_volt, MotorRight.last_current_limit_volt);
+  MotorRight.set_voltage(volt_out);
 }
 
 void right_motor_set_rpm(float rpm) {

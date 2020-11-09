@@ -1,7 +1,7 @@
 #include "Streaming.h"
 #include "sw_pid_controller.cpp"
 
-#define WAYPOINT_COUNT 3
+#define OUT_INTERVAL_MS 100
 
 PidController SpeedErrorControllerLeft;
 PidController SpeedErrorControllerRight;
@@ -10,135 +10,19 @@ PidController SpeedErrorControllerRight;
 
 
 void setup() {
-  Serial.begin(1000000);
-  attach_nunchuk();
+  Serial.begin(115200);
+  Serial.setTimeout(10);
   attach_motors();
   attach_encoders();
-  //attach_IMU();
+  attach_IMU();
+  attach_nunchuk();
+  pinMode(13, OUTPUT);
 
-
-  SpeedErrorControllerLeft.setpoint = 0;
-  SpeedErrorControllerLeft.Kp = 0.4;
-  SpeedErrorControllerLeft.Ki = 0.0035;
-  SpeedErrorControllerLeft.Kd = 10;
-
-  SpeedErrorControllerRight.setpoint = 0;
-  SpeedErrorControllerRight.Kp = 0.4;
-  SpeedErrorControllerRight.Ki = 0.0035;
-  SpeedErrorControllerRight.Kd = 10;
+  //calib_mag_and_print_result(); // Remove writing the calb values to IMU in IMU attach() before doing this
 
   // Flush Nunchuk buffer or something
   get_nunchuk_x();
   get_nunchuk_y();
-
-
-  // record
-  Serial.println("Recording Waypoints");
-  unsigned long last_loop = millis();
-  float left_wheel_target_pos = 0;
-  float right_wheel_target_pos = 0;
-  float waypoint[WAYPOINT_COUNT][2];
-  int waypoint_idx = 1;
-  waypoint[0][0] = 0;
-  waypoint[0][1] = 0;
-  bool record_finished = false;
-  while (not record_finished) {
-
-    float x = map(get_nunchuk_x(), 26, 229, -100, 100);
-    float y = map(get_nunchuk_y() - 4, 35, 225, -100, 100);
-
-    Serial << x << " " << y << "\n";
-
-    if (abs(x) < 20) {
-      x = 0;
-    } else if (x < 0) {
-      x += 20;
-    } else {
-      x -= 20;
-    }
-    if (abs(y) < 3) {
-      y = 0;
-    }
-
-    x = x / 2;
-
-
-    float max_speed = 0.5;
-    unsigned long dt = millis() - last_loop;
-
-    left_wheel_target_pos += dt * (-y + x) * max_speed / 100000.0;
-    right_wheel_target_pos += dt * (-y - x) * max_speed / 100000.0;
-
-    update_encoders();
-
-    float left_wheel_actual_pos = get_left_wheel_distance();
-    float right_wheel_actual_pos = get_right_wheel_distance();
-
-    float left_wheel_target_pos_error = left_wheel_target_pos - left_wheel_actual_pos;
-    float right_wheel_target_pos_error = right_wheel_target_pos - right_wheel_actual_pos;
-
-    float left_wheel_speed_target = constrain(2 * left_wheel_target_pos_error, -max_speed, max_speed);
-    float right_wheel_speed_target = constrain(2 * right_wheel_target_pos_error, -max_speed, max_speed);
-
-    float left_wheel_speed_actual = get_left_wheel_speed();
-    float right_wheel_speed_actual = get_right_wheel_speed();
-
-    float left_wheel_speed_error = left_wheel_speed_actual - left_wheel_speed_target;
-    float right_wheel_speed_error = right_wheel_speed_actual - right_wheel_speed_target;
-
-    float left_wheel_speed_correction = SpeedErrorControllerLeft.evaluate(left_wheel_speed_error);
-    float right_wheel_speed_correction = SpeedErrorControllerRight.evaluate(right_wheel_speed_error);
-
-    left_wheel_set_speed(left_wheel_speed_target + left_wheel_speed_correction);
-    right_wheel_set_speed(right_wheel_speed_target + right_wheel_speed_correction);
-
-    //    Serial.print(100 * left_wheel_speed_target);
-    //    Serial.print(" ");
-    //    Serial.print(100 * left_wheel_speed_actual);
-    //    Serial.print(" ");
-    //    Serial.print(100 * right_wheel_speed_target);
-    //    Serial.print(" ");
-    //    Serial.println(100 * right_wheel_speed_actual);
-
-    Serial << " Actual Position: [L" << left_wheel_actual_pos << " R" << right_wheel_actual_pos << "]";
-    Serial << "\n";
-
-
-    if (get_nunchuk_button_c()) {
-      while (get_nunchuk_button_c()) {
-        ;//debouncing}
-      }
-      Serial.println("Saved waypoint");
-      waypoint[waypoint_idx][0] = left_wheel_actual_pos;
-      waypoint[waypoint_idx][1] = right_wheel_actual_pos;
-      waypoint_idx++;
-
-      if (waypoint_idx >= WAYPOINT_COUNT) {
-        record_finished = true;
-      }
-
-    }
-    last_loop = millis();
-    delay(10);
-  }
-
-  // Print waypoints
-  Serial.println("Recording finished. Waypoints:");
-  for (int i = 0; i < WAYPOINT_COUNT; i++) {
-    Serial.print(waypoint[i][0]);
-    Serial.print(" ");
-    Serial.println(waypoint[i][1]);
-  }
-
-  // Replay backwards
-  Serial.println("Press Z Button on Nunchuk to drive back");
-
-  while (not get_nunchuk_button_z()) {
-    ;
-  }
-  while (get_nunchuk_button_z()) {
-    ;
-  }
 
   // Reset SpeedController Integral Parts
 
@@ -150,113 +34,211 @@ void setup() {
   SpeedErrorControllerLeft.Kp = 0.4;
   SpeedErrorControllerLeft.Ki = 0.001;
   SpeedErrorControllerLeft.Kd = 0;
+  SpeedErrorControllerLeft.I_limit = 0.2;
 
   SpeedErrorControllerRight.setpoint = 0;
   SpeedErrorControllerRight.Kp = 0.4;
   SpeedErrorControllerRight.Ki = 0.001;
   SpeedErrorControllerRight.Kd = 0;
+  SpeedErrorControllerRight.I_limit = 0.2;
 
-  float delta_v_max = 1.0; // m/s^2
+  boolean joystick_mode = false;
+  float max_speed = 1;
+
+  float left_wheel_speed_target = 0;
+  float right_wheel_speed_target = 0;
+
+  String serial_cmds = "";
+
+  long last_valid_cmd_input = millis();
+  long last_out = millis();
+  long last_loop = millis();
+
+  unsigned long acc_accumu_counter = 0;
+  float acc_x_accumu = 0;
+  float acc_y_accumu = 0;
+  float acc_z_accumu = 0;
+
+  while (true) {
+
+    bool data_requested = false;
+
+    if (Serial.available() > 0) {
+      serial_cmds = Serial.readStringUntil('\n');
+      //Serial.println(serial_cmds);
 
 
-
-  for (int i = WAYPOINT_COUNT; i >= 1; i--) {
-    Serial.print("Going to waypoint Nr. ");
-    Serial.println(i);
-
-
-
-    
-    float left_wheel_target_pos = waypoint[i - 1][0];
-    float right_wheel_target_pos = waypoint[i - 1][1];
-
-
-
-    
-    float max_speed = 0.1;
-    float target_plan_delta = 0.1;
-    float left_wheel_target_pos_error = 99999;
-    float right_wheel_target_pos_error = 99999;
-    unsigned long last_loop = millis();
-    while ((abs(left_wheel_target_pos_error) > 0.01) or (abs(right_wheel_target_pos_error) > 0.01)) {
-
-      unsigned long dt = millis() - last_loop;
-      update_encoders();
-
-      float left_wheel_actual_pos = get_left_wheel_distance();
-      float right_wheel_actual_pos = get_right_wheel_distance();
-
-      left_wheel_target_pos_error = left_wheel_target_pos - left_wheel_actual_pos;
-      right_wheel_target_pos_error = right_wheel_target_pos - right_wheel_actual_pos;
-
-      float pos_error_max_magnitude = max(abs(left_wheel_target_pos_error), abs(right_wheel_target_pos_error));
-
-      float pos_error_left_relative;
-      if (abs(left_wheel_target_pos_error) < 0.01) {
-        pos_error_left_relative = 0;
-      } else {
-        pos_error_left_relative = left_wheel_target_pos_error / pos_error_max_magnitude;
-      }
-      float pos_error_right_relative;
-      if (abs(right_wheel_target_pos_error) < 0.01) {
-        pos_error_right_relative = 0;
-      } else {
-        pos_error_right_relative = right_wheel_target_pos_error / pos_error_max_magnitude;
+      // check if valid joystick mode activate String received
+      if (String("JOYSTICK") == serial_cmds.substring(0, 8)) {
+        joystick_mode = true;
       }
 
-      float left_wheel_speed_target = pos_error_left_relative * max_speed;
-      float right_wheel_speed_target = pos_error_right_relative * max_speed;
 
-      float left_wheel_speed_actual = get_left_wheel_speed();
-      float right_wheel_speed_actual = get_right_wheel_speed();
+      // check if valid data request String received
+      if (String("REQ") == serial_cmds.substring(0, 3)) {
+        data_requested = true;
+      }
 
-      //left_wheel_speed_target = constrain(left_wheel_speed_target, left_wheel_speed_actual - 0.001 * dt * delta_v_max, left_wheel_speed_actual + 0.001 * dt * delta_v_max);
-      //right_wheel_speed_target = constrain(right_wheel_speed_target, right_wheel_speed_actual - 0.001 * dt * delta_v_max, right_wheel_speed_actual + 0.001 * dt * delta_v_max);
 
-      float left_wheel_speed_error = left_wheel_speed_actual - left_wheel_speed_target;
-      float right_wheel_speed_error = right_wheel_speed_actual - right_wheel_speed_target;
 
-      float left_wheel_speed_correction = SpeedErrorControllerLeft.evaluate(left_wheel_speed_error);
-      float right_wheel_speed_correction = SpeedErrorControllerRight.evaluate(right_wheel_speed_error);
+      // check if cmd string received via Serial is valid
+      bool is_valid = true;
 
-      float left_wheel_speed_output = left_wheel_speed_target + left_wheel_speed_correction;
-      float right_wheel_speed_output = right_wheel_speed_target + right_wheel_speed_correction;
+      if (String("CMDIN") != serial_cmds.substring(0, 5)) {
+        is_valid = false;
+        //Serial.println("CMDIN prefix missing");
+      }
+      if (String("END") != serial_cmds.substring(18, 21)) {
+        is_valid = false;
+        //Serial.println("END suffix missing");
+      }
 
-      left_wheel_set_speed(left_wheel_speed_output);
-      right_wheel_set_speed(right_wheel_speed_output);
+      float v_links = serial_cmds.substring(6, 11).toInt() / 1000.0;
+      float v_rechts = serial_cmds.substring(12, 17).toInt() / 1000.0;
 
-      Serial << "Target Position: [L" << left_wheel_target_pos << " R" << right_wheel_target_pos << "]";
-      Serial << " Actual Position: [L" << left_wheel_actual_pos << " R" << right_wheel_actual_pos << "]";
-      Serial << " pos_error_max_magnitude: " << pos_error_max_magnitude;
-      Serial << " Rel. Left Pos Error: " << pos_error_left_relative << " Rel. Right Pos Error: " << pos_error_right_relative;
-      Serial << " left_wheel_speed_output: " << left_wheel_speed_output << " right_wheel_speed_output: " << right_wheel_speed_output;
-      Serial << "\n";
-      last_loop = millis();
-      delay(10);
+      //Serial << "v_links: " << v_links << " v_rechts: " << v_rechts << "\n";
+
+      if (is_valid) {
+        joystick_mode = false;
+        left_wheel_speed_target = v_links;
+        right_wheel_speed_target = v_rechts;
+        last_valid_cmd_input = millis();
+      }
+
+      serial_cmds = "";
+
     }
-    left_motor_set_power(0);
-    right_motor_set_power(0);
-    delay(1000);
+
+    if ((millis() - last_valid_cmd_input) > 1000) { // STOP if no valid input for more than 1 second
+      left_wheel_speed_target = 0;
+      right_wheel_speed_target = 0;
+    }
+
+    update_encoders();
+    update_IMU();
+
+    if (joystick_mode) {
+      float x = map(get_nunchuk_x(), 26, 229, -100, 100);
+      float y = map(get_nunchuk_y() - 4, 35, 225, -100, 100);
+
+
+      if (abs(x) < 20) {
+        x = 0;
+      } else if (x < 0) {
+        x += 20;
+      } else {
+        x -= 20;
+      }
+      if (abs(y) < 3) {
+        y = 0;
+      }
+
+
+      x = pow(x, 3) / 10000;
+      y = pow(y, 3) / 10000;
+
+      left_wheel_speed_target = (-y + x) * max_speed / 100;
+      right_wheel_speed_target = (-y - x) * max_speed / 100;
+    }
+
+    acc_x_accumu += get_IMU_Acc_X();
+    acc_y_accumu += get_IMU_Acc_Y();
+    acc_z_accumu += get_IMU_Acc_Z();
+    acc_accumu_counter++;
+
+    float left_wheel_start_pos = get_left_wheel_distance();
+    float right_wheel_start_pos = get_right_wheel_distance();
+
+    float left_wheel_actual_pos = get_left_wheel_distance();
+    float right_wheel_actual_pos = get_right_wheel_distance();
+
+    float left_wheel_speed_actual = get_left_wheel_speed();
+    float right_wheel_speed_actual = get_right_wheel_speed();
+
+    float left_wheel_speed_error = left_wheel_speed_actual - left_wheel_speed_target;
+    float right_wheel_speed_error = right_wheel_speed_actual - right_wheel_speed_target;
+
+    float left_wheel_speed_correction = SpeedErrorControllerLeft.evaluate(left_wheel_speed_error);
+    float right_wheel_speed_correction = SpeedErrorControllerRight.evaluate(right_wheel_speed_error);
+
+    float left_wheel_speed_output = left_wheel_speed_target + left_wheel_speed_correction;
+    float right_wheel_speed_output = right_wheel_speed_target + right_wheel_speed_correction;
+
+
+
+    digitalWrite(13, LOW);
+
+    if (left_wheel_speed_target == 0) {
+      left_wheel_set_speed(0);
+    } else {
+      left_wheel_set_speed(left_wheel_speed_output);
+      digitalWrite(13, HIGH);
+    }
+
+    if (right_wheel_speed_target == 0) {
+      right_wheel_set_speed(0);
+    } else {
+      right_wheel_set_speed(right_wheel_speed_output);
+      digitalWrite(13, HIGH);
+    }
+
+
+    //Serial << "Target Position: [L" << left_wheel_target_pos << " R" << right_wheel_target_pos << "]";
+    //Serial << " Actual Position: [L" << left_wheel_actual_pos << " R" << right_wheel_actual_pos << "]";
+    //Serial << " pos_error_max_magnitude: " << pos_error_max_magnitude;
+    //Serial << " Rel. Left Pos Error: " << pos_error_left_relative << " Rel. Right Pos Error: " << pos_error_right_relative;
+    //Serial << " left_wheel_speed_output: " << left_wheel_speed_output << " right_wheel_speed_output: " << right_wheel_speed_output;
+    //Serial << "\n";
+
+    long left_wheel_actual_pos_int = left_wheel_actual_pos * 1000;
+    long right_wheel_actual_pos_int = right_wheel_actual_pos * 1000;
+
+    long curr_time = millis();
+    long loop_dt = curr_time - last_loop;
+    last_loop = curr_time;
+    //if (curr_time - last_out > OUT_INTERVAL_MS) {
+    if (data_requested) {
+
+      Serial << "{"; // Start python dictionary string
+
+      Serial << "'Time': " << millis(); // Time entry in milliseconds
+      Serial << ", 'Left_wheel_dist': " << left_wheel_actual_pos_int;
+      Serial << ", 'Right_wheel_dist': " << right_wheel_actual_pos_int;
+      Serial << ", 'IMU_roll': " << get_IMU_roll_radians();
+      Serial << ", 'IMU_pitch': " << get_IMU_pitch_radians();
+      Serial << ", 'IMU_yaw': " << get_IMU_yaw_radians();
+      Serial << ", 'IMU_Acc_x': " << acc_x_accumu / acc_accumu_counter;
+      Serial << ", 'IMU_Acc_y': " << acc_y_accumu / acc_accumu_counter;
+      Serial << ", 'IMU_Acc_z': " << acc_z_accumu / acc_accumu_counter;
+      Serial << ", 'Loop_dt': " << loop_dt;
+      Serial << ", 'Acc_Accu': " << acc_accumu_counter;
+
+      Serial << "}\n"; // Close python dictionary string
+
+      acc_x_accumu = 0;
+      acc_y_accumu = 0;
+      acc_z_accumu = 0;
+      acc_accumu_counter = 0;
+
+      /*Serial << "TIM_OUT," << millis() / 1000.0 << ",END\n";
+        Serial << "POS_OUT," << left_wheel_actual_pos_int << "," << right_wheel_actual_pos_int << ",END\n";
+        Serial << "DIR_OUT," << get_IMU_roll_radians() << "," << get_IMU_pitch_radians() << "," << get_IMU_yaw_radians() << ",END\n";
+        Serial << "ACC_OUT," << get_IMU_Acc_X() << "," << get_IMU_Acc_Y() << "," << get_IMU_Acc_Z() << ",END\n";*/
+      last_out += OUT_INTERVAL_MS;
+      data_requested = false;
+    }
+
+
+
+
+    //delay(20);
+
   }
-
-
-  
-
-  left_motor_set_power(0);
-  right_motor_set_power(0);
-
-
-  delay(1000000L);
-
-
-
 
 }
 
 
 void loop() {
 
-
-  delay(10);
 
 }

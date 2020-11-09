@@ -121,11 +121,11 @@ void attach_encoders() {
 
   EncoderLeft.attach(M_LEFT_POS, false);
   EncoderLeft.set_gear_reduction_ratio(0.5);
-  EncoderLeft.set_wheel_circumference(int(PI * 250));
+  EncoderLeft.set_wheel_circumference(int(PI * 254));
 
   EncoderRight.attach(M_RIGHT_POS, true);
   EncoderRight.set_gear_reduction_ratio(0.5);
-  EncoderRight.set_wheel_circumference(int(PI * 250));
+  EncoderRight.set_wheel_circumference(int(PI * 254));
 
   //Serial.println("Encoders attached.");
 }

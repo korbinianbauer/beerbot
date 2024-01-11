@@ -1,0 +1,97 @@
+#include "MPU9250_hideakitai.h"
+
+MPU9250 mpu;
+
+const float g = 9.81;
+const float acc_x_offset = -0.15; // m/s^2
+const float acc_y_offset = 0.166; // m/s^2
+const float roll_offset = 1.0; // degree
+const float pitch_offset = -0.7; // degree
+
+void attach_IMU() {
+
+  Wire.begin();
+
+  mpu.setup();
+
+//  mpu.calibrateMag();
+//
+//  mpu.printCalibration();
+
+  mpu.setAccBias(0, -0.01465);
+  mpu.setAccBias(1, 0.03082);
+  mpu.setAccBias(2, 0.01837);
+
+  mpu.setGyroBias(0, 1.86);
+  mpu.setGyroBias(1, -0.27);
+  mpu.setGyroBias(2, -0.14);
+
+  mpu.setMagBias(0, 272.19);
+  mpu.setMagBias(1, 333.37);
+  mpu.setMagBias(2, -368.52);
+
+
+  //    values got by calibration:
+  //    mpu.setMagScale(0, 1.40);
+  //    mpu.setMagScale(1, 0.80);
+  //    mpu.setMagScale(2, 0.96);
+
+  //  manually optimized
+//  mpu.setMagScale(0, 1.2);
+//  mpu.setMagScale(1, 0.90);
+//  mpu.setMagScale(2, 0.96);
+
+  mpu.setMagBias(0, 218.19);
+  mpu.setMagBias(1, 264.37);
+  mpu.setMagBias(2, -496.52);
+  
+  mpu.setMagScale(0, 1.02);
+  mpu.setMagScale(1, 0.98);
+  mpu.setMagScale(2, 1.00);
+
+  // Munich, 10.07.2020
+  mpu.setMagneticDeclination(3.4);
+}
+
+void update_IMU() {
+  mpu.update();
+}
+
+float get_IMU_roll() {
+  return mpu.getRoll() + roll_offset;
+}
+
+float get_IMU_pitch() {
+  return mpu.getPitch() + pitch_offset;
+}
+
+float get_IMU_yaw() {
+  return mpu.getYaw() + 180; // Sensor mounted backwards, [-180...180] -> [0...360]
+
+  // North = 0°, East = 90°, South = 180°, West = 270°
+}
+
+float get_IMU_roll_radians() {
+  return get_IMU_roll() / 180 * PI;
+}
+
+float get_IMU_pitch_radians() {
+  return get_IMU_pitch() / 180 * PI;
+}
+
+float get_IMU_yaw_radians() {
+  return get_IMU_yaw() / 180 * PI;
+}
+
+float get_IMU_Acc_X() {
+  return mpu.getAcc(0) * g + acc_x_offset;
+}
+
+float get_IMU_Acc_Y() {
+  return mpu.getAcc(1) * g + acc_y_offset;
+}
+
+float get_IMU_Acc_Z() {
+  return mpu.getAcc(2) * g;
+}
+

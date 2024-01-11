@@ -1,0 +1,5 @@
+Mon Nov  1 15:45:05 2021
+Program 5: 2s geradeaus bei 0.5m/s, 1s Drehung nach rechts bei +-0.5m/s, 4 Wiederholungen
+v_links: -0.50 v_rechts: -0.50
+v_links: 0.00 v_rechts: 0.00
+I2C ERROR CODE : 4

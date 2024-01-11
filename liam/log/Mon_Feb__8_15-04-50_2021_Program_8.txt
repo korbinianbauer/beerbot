@@ -1,0 +1,13 @@
+Mon Feb  8 15:04:50 2021
+Program 8: Rampe von 0-1 m/s innerhalb 1s, dann Stillstand
+{'Time': 9652, 'Left_wheel_dist': 0, 'Right_wheel_dist': 0, 'IMU_roll': -0.03, 'IMU_pitch': 0.05, 'IMU_yaw': 3.57, 'IMU_Acc_x': 0.42, 'IMU_Acc_y': -0.22, 'IMU_Acc_z': 9.88, 'Loop_dt': 19, 'Acc_Accu': 1146}
+{'Time': 9750, 'Left_wheel_dist': -4, 'Right_wheel_dist': 0, 'IMU_roll': -0.07, 'IMU_pitch': 0.01, 'IMU_yaw': 3.55, 'IMU_Acc_x': 0.24, 'IMU_Acc_y': -0.45, 'IMU_Acc_z': 9.97, 'Loop_dt': 19, 'Acc_Accu': 8}
+{'Time': 9849, 'Left_wheel_dist': -19, 'Right_wheel_dist': -6, 'IMU_roll': -0.10, 'IMU_pitch': -0.07, 'IMU_yaw': 3.50, 'IMU_Acc_x': -0.44, 'IMU_Acc_y': -1.06, 'IMU_Acc_z': 10.01, 'Loop_dt': 19, 'Acc_Accu': 8}
+{'Time': 9950, 'Left_wheel_dist': -46, 'Right_wheel_dist': -22, 'IMU_roll': -0.03, 'IMU_pitch': -0.10, 'IMU_yaw': 3.49, 'IMU_Acc_x': -1.03, 'IMU_Acc_y': -0.38, 'IMU_Acc_z': 9.82, 'Loop_dt': 20, 'Acc_Accu': 8}
+{'Time': 10050, 'Left_wheel_dist': -84, 'Right_wheel_dist': -55, 'IMU_roll': -0.02, 'IMU_pitch': -0.08, 'IMU_yaw': 3.51, 'IMU_Acc_x': -0.85, 'IMU_Acc_y': 0.07, 'IMU_Acc_z': 9.94, 'Loop_dt': 19, 'Acc_Accu': 8}
+{'Time': 10149, 'Left_wheel_dist': -132, 'Right_wheel_dist': -95, 'IMU_roll': -0.01, 'IMU_pitch': -0.05, 'IMU_yaw': 3.53, 'IMU_Acc_x': -0.80, 'IMU_Acc_y': 0.09, 'IMU_Acc_z': 9.85, 'Loop_dt': 19, 'Acc_Accu': 8}
+{'Time': 10249, 'Left_wheel_dist': -190, 'Right_wheel_dist': -146, 'IMU_roll': -0.03, 'IMU_pitch': -0.06, 'IMU_yaw': 3.55, 'IMU_Acc_x': -0.75, 'IMU_Acc_y': -0.04, 'IMU_Acc_z': 9.93, 'Loop_dt': 19, 'Acc_Accu': 8}
+{'Time': 10350, 'Left_wheel_dist': -254, 'Right_wheel_dist': -212, 'IMU_roll': -0.01, 'IMU_pitch': -0.05, 'IMU_yaw': 3.55, 'IMU_Acc_x': -0.56, 'IMU_Acc_y': -0.07, 'IMU_Acc_z': 9.74, 'Loop_dt': 20, 'Acc_Accu': 8}
+{'Time': 10451, 'Left_wheel_dist': -332, 'Right_wheel_dist': -290, 'IMU_roll': -0.04, 'IMU_pitch': -0.03, 'IMU_yaw': 3.54, 'IMU_Acc_x': -0.46, 'IMU_Acc_y': -0.50, 'IMU_Acc_z': 9.91, 'Loop_dt': 19, 'Acc_Accu': 8}
+{'Time': 10551, 'Left_wheel_dist': -418, 'Right_wheel_dist': -365, 'IMU_roll': 0.00, 'IMU_pitch': -0.04, 'IMU_yaw': 3.54, 'IMU_Acc_x': -0.36, 'IMU_Acc_y': -0.06, 'IMU_Acc_z': 9.79, 'Loop_dt': 20, 'Acc_Accu': 8}
+{'Time': 10648, 'Left_wheel_dist': -506, 'Right_wheel_dist': -453, 'IMU_roll': 0.00, 'IMU_pitch': -0.02, 'IMU_yaw': 3.56, 'IMU_Acc_x': -0.45, 'IMU_Acc_y': 0.06, 'IMU_Acc_z': 10.40, 'Loop_dt': 18, 'Acc_Accu': 8}

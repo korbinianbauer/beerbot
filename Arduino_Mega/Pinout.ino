@@ -16,8 +16,8 @@
 #define M_RIGHT_FWD_EN 9
 #define M_RIGHT_BWD_EN 6*/
 
-#define M_RIGHT_DIR 5
-#define M_RIGHT_PWM 3
+#define M_RIGHT_DIR 3
+#define M_RIGHT_PWM 5
 
 // Right Motor Encoder
 #define M_RIGHT_POS A1

@@ -1,0 +1,25 @@
+Thu Jan 11 21:12:57 2024
+Program 1: 10s Geradeaus bei 0.5m/s
+v_links: -0.50 v_rechts: -0.50
+v_links: 0.00 v_rechts: 0.00
+readBytes(): I2C ERROR CODE : 2
+{'Time': 10176, 'Left_wheel_dist': -6, 'Right_wheel_dist': 2, 'IMU_roll': 0.02, 'IMU_pitch': 0.05, 'IMU_yaw': 0.81, 'IMU_Acc_x': 0.34, 'IMU_Acc_y': 0.13, 'IMU_Acc_z': 10.08, 'Loop_dt': 18, 'Acc_Accu': 1415}
+readBytes(): I2C ERROR CODE : 2
+readBytes(): I2C ERROR CODE : 2
+v_links: -0.50 v_rechts: -0.50
+v_links: 0.00 v_rechts: 0.00
+{'Time': 10283, 'Left_wheel_dist': -73, 'Right_wheel_dist': 0, 'IMU_roll': 0.10, 'IMU_pitch': 0.06, 'IMU_yaw': 0.78, 'IMU_Acc_x': 18.88, 'IMU_Acc_y': 8.69, 'IMU_Acc_z': 30.60, 'Loop_dt': 20, 'Acc_Accu': 10}
+v_links: -0.50 v_rechts: -0.50
+v_links: 0.00 v_rechts: 0.00
+{'Time': 10383, 'Left_wheel_dist': -146, 'Right_wheel_dist': 0, 'IMU_roll': 0.05, 'IMU_pitch': 0.04, 'IMU_yaw': 0.77, 'IMU_Acc_x': 0.29, 'IMU_Acc_y': 0.13, 'IMU_Acc_z': 10.10, 'Loop_dt': 19, 'Acc_Accu': 9}
+v_links: -0.50 v_rechts: -0.50
+v_links: 0.00 v_rechts: 0.00
+{'Time': 10484, 'Left_wheel_dist': -214, 'Right_wheel_dist': 0, 'IMU_roll': 0.03, 'IMU_pitch': 0.03, 'IMU_yaw': 0.77, 'IMU_Acc_x': 0.29, 'IMU_Acc_y': 0.13, 'IMU_Acc_z': 10.08, 'Loop_dt': 19, 'Acc_Accu': 9}
+v_links: -0.50 v_rechts: -0.50
+v_links: 0.00 v_rechts: 0.00
+{'Time': 10578, 'Left_wheel_dist': -276, 'Right_wheel_dist': 0, 'IMU_roll': 0.02, 'IMU_pitch': 0.03, 'IMU_yaw': 0.78, 'IMU_Acc_x': 0.30, 'IMU_Acc_y': 0.13, 'IMU_Acc_z': 10.09, 'Loop_dt': 20, 'Acc_Accu': 8}
+v_links: -0.50 v_rechts: -0.50
+v_links: 0.00 v_rechts: 0.00
+{'Time': 10679, 'Left_wheel_dist': -343, 'Right_wheel_dist': 0, 'IMU_roll': 0.02, 'IMU_pitch': 0.03, 'IMU_yaw': 0.78, 'IMU_Acc_x': 0.30, 'IMU_Acc_y': 0.13, 'IMU_Acc_z': 10.08, 'Loop_dt': 19, 'Acc_Accu': 9}
+v_links: -0.50 v_rechts: -0.50
+v_links: 0.00 v_rechts: 0.00

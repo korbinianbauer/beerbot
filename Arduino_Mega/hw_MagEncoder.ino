@@ -2,7 +2,7 @@ class MagEncoder {
   public:
     int pin;
     long abs_angle = 0;
-    long angular_speed = 0;
+    float angular_speed = 0;
     int last_angle = 0;
     int offset_angle = 0;
     bool inverted = false;
@@ -11,6 +11,8 @@ class MagEncoder {
     unsigned long last_update;
     unsigned long last_speed_update;
     long last_abs_speed_angle = 0;
+
+    long delta_angle_acc = 0;
 
     void attach(int pin_analog, bool invert) {
       pin = pin_analog;
@@ -23,41 +25,68 @@ class MagEncoder {
       // This has to be called >2x per revolution
       unsigned long time_now = millis();
 
-      int angle = get_angle();
-      int delta_angle = angle - last_angle;
-      unsigned long dt = time_now - last_update;
 
-      if (delta_angle < -1800) {
-        delta_angle += 3600;
-      } else if (delta_angle > 1800) {
-        delta_angle -= 3600;
+      unsigned long dt = time_now - last_update;
+      unsigned long dt_speed = time_now - last_speed_update;
+
+      int angle = 0;
+      int delta_angle = 0;
+      int sum_delta_angle = 0;
+      int oversampling = 10;
+
+      for (int i = 0; i < oversampling; i++) {
+        angle = get_angle();
+        delta_angle = angle - last_angle;
+        while (delta_angle < -1800) {
+          delta_angle += 3600;
+        }
+        while (delta_angle > 1800) {
+          delta_angle -= 3600;
+        }
+        sum_delta_angle += delta_angle;
+        //Serial << "angle:" << angle << ", last_angle:" << last_angle << ",delta_angle:" << delta_angle << "\n";
       }
+
+      delta_angle = delta_angle / oversampling;
+      delta_angle_acc += delta_angle;
 
       abs_angle += delta_angle;
 
 
+
+      //Serial << ",sum_delta_angle:" << sum_delta_angle << "\n";
+
+
       // angle change since last speed calculation
       long delta_abs_speed_angle = abs_angle - last_abs_speed_angle;
-      long dt_speed = time_now - last_speed_update;
-      if (abs(delta_abs_speed_angle) > 8) {
+      float new_angular_speed = 0;
+
+      if (abs(delta_angle_acc) > 20) {
         // Avoid speed readings due to jitter
-        float new_angular_speed = 100.0 * delta_abs_speed_angle / dt_speed; // degrees per second
-        //angular_speed = 0.9 * angular_speed + 0.1 * new_angular_speed;
+        new_angular_speed = (100.0 * delta_angle_acc) / dt_speed; // degrees per second
+        delta_angle_acc = 0;
         angular_speed = new_angular_speed;
         last_speed_update = time_now;
-        last_abs_speed_angle = abs_angle;
-      } else if (dt_speed >= 100) {
-        // If no significant angle change since 100ms, assume speed == 0
-        angular_speed = 0;
+      } else if (dt_speed > 100) {
+        // If no significant angle change, force update anyways
+        angular_speed = (100.0 * delta_angle_acc) / dt_speed; // degrees per second
+        delta_angle_acc = 0;
         last_speed_update = time_now;
-        last_abs_speed_angle = abs_angle;
       }
 
 
 
+      //angular_speed = 0.9 * angular_speed + 0.1 * new_angular_speed;
+
+      //Serial << "abs_angle:" << abs_angle << "\n";
+      //Serial << "angular_speed:" << angular_speed << "\n";
+      //Serial << "delta_angle_acc:" << delta_angle_acc << "\n";
+      //Serial << "abs_angle:" << abs_angle << ", delta_abs_speed_angle:" << delta_abs_speed_angle << ", angular_speed:" << angular_speed << "\n";
+      //Serial << "delta_abs_speed_angle:" << delta_abs_speed_angle << "\n";
 
 
-      last_angle = angle;
+
+      last_angle = (last_angle + delta_angle) % 3600;
       last_update = time_now;
     }
 
@@ -101,7 +130,13 @@ class MagEncoder {
   private:
 
     int get_angle() {
-      int raw_angle = int(analogRead(pin) / 1023.0 * 3600); // Zehntel grad -> 1 Umdrehung = 3600
+      int raw_angle = 0;
+      int oversampling = 1;
+      for (int i = 0; i < oversampling; i++) {
+        raw_angle += int(analogRead(pin) / 1023.0 * 3600); // Zehntel grad -> 1 Umdrehung = 3600
+      }
+      raw_angle = raw_angle / oversampling;
+      //Serial << "raw_angle:" << raw_angle << "\n";
       if (inverted) {
         raw_angle = 3600 - raw_angle;
       }
@@ -176,7 +211,3 @@ float get_right_wheel_speed() {
   // returns right wheel speed in meters per second
   return EncoderRight.get_wheel_speed();
 }
-
-
-
-

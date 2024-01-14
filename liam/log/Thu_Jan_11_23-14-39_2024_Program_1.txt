@@ -1,0 +1,18 @@
+Thu Jan 11 23:14:39 2024
+Program 1: 10s Geradeaus bei 0.5m/s
+v_links: -0.50 v_rechts: -0.50
+v_links: 0.00 v_rechts: 0.00
+{'Time': 9651, 'Left_wheel_dist': -44, 'Right_wheel_dist': 0, 'IMU_roll': 0.00, 'IMU_pitch': 0.03, 'IMU_yaw': 0.22, 'IMU_Acc_x': 0.32, 'IMU_Acc_y': 0.14, 'IMU_Acc_z': 10.06, 'Loop_dt': 21, 'Acc_Accu': 1139}
+readBytes(): I2C ERROR CODE : 3
+readBytes(): I2C ERROR CODE : 3
+v_links: -0.50 v_rechts: -0.50
+v_links: 0.00 v_rechts: 0.00
+{'Time': 9749, 'Left_wheel_dist': -86, 'Right_wheel_dist': -2, 'IMU_roll': 0.00, 'IMU_pitch': 0.04, 'IMU_yaw': 0.21, 'IMU_Acc_x': 0.30, 'IMU_Acc_y': 0.13, 'IMU_Acc_z': 10.05, 'Loop_dt': 21, 'Acc_Accu': 8}
+v_links: -0.50 v_rechts: -0.50
+v_links: 0.00 v_rechts: 0.00
+{'Time': 9849, 'Left_wheel_dist': -137, 'Right_wheel_dist': 0, 'IMU_roll': -0.00, 'IMU_pitch': 0.03, 'IMU_yaw': 0.21, 'IMU_Acc_x': 0.32, 'IMU_Acc_y': 0.13, 'IMU_Acc_z': 10.07, 'Loop_dt': 20, 'Acc_Accu': 8}
+v_links: -0.50 v_rechts: -0.50
+v_links: 0.00 v_rechts: 0.00
+{'Time': 9950, 'Left_wheel_dist': -185, 'Right_wheel_dist': 0, 'IMU_roll': 0.01, 'IMU_pitch': 0.03, 'IMU_yaw': 0.20, 'IMU_Acc_x': 0.32, 'IMU_Acc_y': 0.15, 'IMU_Acc_z': 10.07, 'Loop_dt': 21, 'Acc_Accu': 8}
+v_links: -0.50 v_rechts: -0.50
+MPU9250 WHO AM I = 73

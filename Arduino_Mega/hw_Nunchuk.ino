@@ -1,5 +1,5 @@
 #include <Wire.h>
-#include "nunchuk.h"
+#include "Nunchuk.h"
 
 bool nunchuk_attached = false;
 
@@ -43,4 +43,3 @@ bool get_nunchuk_button_z(){
   nunchuk_read();
   return nunchuk_buttonZ();
 }
-

@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "Streaming.h"
 
 class PidController {
   public:
@@ -42,14 +43,23 @@ class PidController {
       D_out = Kd * (error - lastError) / dt;
       D_out = constrain(D_out, -D_limit, D_limit);
 
+      if (setpoint == 0){
+        // reset integrator when speed = 0 requested
+        I_out = 0;
+      }
+
       output = P_out + I_out;
       if (not isnan(D_out)){
         // If both (error - lastError) and dt are 0, D_out is invalid, so we don't include it.
         output += D_out;
       }
 
+      
+
       lastError = error;
       lastRun = time_now;
+
+      //Serial << "Setpoint:" << setpoint*100 << ", Input:" << input*100 << ", Error:" << error*100 << ", P_out:" << P_out*100 << ", I_out:" << I_out*100 << ", D_out:" << D_out*100 << ", Output:" << output*100 << "\n";
 
       return output;
     }

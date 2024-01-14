@@ -36,7 +36,7 @@ def wait_for_arduino():
         verbindung.readline()
 
 def set_logfile():
-    filename = "/home/pi/beerbot/log/"
+    filename = "/home/pi/beerbot/liam/log/"
     filename += time.ctime(time.time())
     
     filename += "_Program_"

@@ -25,7 +25,7 @@ while keep_alive:
         def echo_all(message):
                 program = message.text.replace("/rec ", "")
                 bot.reply_to(message, "Running program " + str(program))
-                os.system("python /home/pi/beerbot/Rec_program.py " + str(program))
+                os.system("python /home/pi/beerbot/liam/Rec_program.py " + str(program))
                 bot.reply_to(message, "Done.")
             
                 

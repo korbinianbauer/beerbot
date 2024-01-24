@@ -41,8 +41,8 @@ void setup() {
   while (!armed) {
     sbus_rx.Read();
     data = sbus_rx.data();
-    throttle = map(data.ch[SBUS_CH_THROTTLE], 173, 1811, -300, 300);
-    steer = map(data.ch[SBUS_CH_STEER], 173, 1811, -300, 300);
+    throttle = map(data.ch[SBUS_CH_THROTTLE], 173, 1811, -1000, 1000);
+    steer = map(data.ch[SBUS_CH_STEER], 173, 1811, -1000, 1000);
     //Serial << throttle << " " << steer << "\n";
     if ((throttle == 0) and (steer == 0)) {
       armed = true;
@@ -69,7 +69,7 @@ void setup() {
   SpeedErrorControllerRight.Kd = 0;
   SpeedErrorControllerRight.I_limit = 0.5;
 
-  float max_speed = 1;
+  float max_speed = 2.0; // m/s
 
   float left_wheel_speed_target = 0;
   float right_wheel_speed_target = 0;
@@ -89,8 +89,8 @@ void setup() {
 
     data = sbus_rx.data();
 
-    throttle = map(data.ch[SBUS_CH_THROTTLE], 173, 1811, -300, 300);
-    steer = map(data.ch[SBUS_CH_STEER], 173, 1811, -300, 300);
+    throttle = map(data.ch[SBUS_CH_THROTTLE], 173, 1811, -1000*max_speed, 1000*max_speed);
+    steer = map(data.ch[SBUS_CH_STEER], 173, 1811, -1000*max_speed, 1000*max_speed);
 
     if (abs(throttle) < 2) {
       throttle = 0;
@@ -105,8 +105,12 @@ void setup() {
 
     //Serial << "sbus_throttle: " << data.ch[SBUS_CH_THROTTLE] << ", sbus_steer: " << data.ch[SBUS_CH_STEER] << "\n";
 
-    left_wheel_speed_target = (throttle + steer) / 1000.0;
-    right_wheel_speed_target = (throttle - steer) / 1000.0;
+    float scale = constrain(1000*max_speed/(abs(steer)+abs(throttle)), 0.0, 1.0);
+
+    left_wheel_speed_target = (throttle + steer) / 1000.0 * scale;
+    right_wheel_speed_target = (throttle - steer) / 1000.0 * scale;
+
+    
 
 
     float left_wheel_speed_actual = get_left_wheel_speed();
@@ -129,6 +133,9 @@ void setup() {
 
     left_wheel_speed_output = left_wheel_speed_target + left_wheel_speed_correction;
     right_wheel_speed_output = right_wheel_speed_target + right_wheel_speed_correction;
+
+    left_wheel_speed_output = constrain(left_wheel_speed_output, -1000*max_speed, 1000*max_speed);
+    right_wheel_speed_output = constrain(right_wheel_speed_output, -1000*max_speed, 1000*max_speed);
 
 
 

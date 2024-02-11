@@ -13,7 +13,7 @@ while keep_alive:
 
         @bot.message_handler(commands=['start', 'help'])
         def send_welcome(message):
-                bot.reply_to(message, "Howdy, how are you doing?2")
+                bot.reply_to(message, "Howdy, how are you doing?")
                 print(message.chat.id)
 
         @bot.message_handler(commands=["list"])

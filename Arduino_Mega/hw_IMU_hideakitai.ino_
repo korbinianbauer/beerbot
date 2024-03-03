@@ -1,4 +1,4 @@
-#include "MPU9250_hideakitai.h"
+#include "MPU9250/MPU9250.h"
 
 MPU9250 mpu;
 
@@ -94,4 +94,3 @@ float get_IMU_Acc_Y() {
 float get_IMU_Acc_Z() {
   return mpu.getAcc(2) * g;
 }
-

@@ -108,6 +108,8 @@ class Motor {
         Serial.println("ERROR: Motors are not attached, cannot control pwm!");
       }
 
+      dutycycle = constrain(dutycycle, 0, 0.98); // Never use 100% Duty Cycle on this IRF3205 H-Bridge, as it will cause Shoot-through!!!
+
       if (pin == 2) {
         //        Serial.print("Writing to OCR3B");
         //        Serial.print(" with value=");
